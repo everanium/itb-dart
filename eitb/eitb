@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+#
+# eitb -- launcher for the Dart binding's CLI demonstrator.
+# Resolves libitb3.so from the repo dist directory unless
+# ITB_LIBITB3_PATH is already set, then delegates to dart run. The
+# caller's working directory is preserved so relative file arguments
+# resolve as typed.
+
+set -eu
+set -o pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+export ITB_LIBITB3_PATH="${ITB_LIBITB3_PATH:-$REPO_ROOT/dist/linux-amd64/libitb3.so}"
+
+exec dart run "$SCRIPT_DIR/itb_eitb.dart" "$@"

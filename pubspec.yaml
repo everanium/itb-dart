@@ -1,0 +1,23 @@
+name: libitb3
+description: ITB Symmetric Cipher Construction with Ambiguity-Based Security - Dart
+version: 0.5.1
+homepage: https://github.com/everanium/itb
+repository: https://github.com/everanium/itb
+issue_tracker: https://github.com/everanium/itb/issues
+documentation: https://github.com/everanium/itb
+topics:
+  - cryptography
+  - encryption
+  - cipher
+  - symmetric
+  - aead
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  ffi: ^2.1.0
+
+dev_dependencies:
+  lints: ^3.0.0
+  test: ^1.24.0

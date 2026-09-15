@@ -1,0 +1,5 @@
+# Dart tool state and dependency lock (library convention: the lock
+# file is not committed for packages).
+.dart_tool/
+pubspec.lock
+build/
