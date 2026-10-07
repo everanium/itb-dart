@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 #
-# build.sh -- one-step build for the Dart binding's libitb3.so
-# dependency. Prerequisites (Go, Dart 3.0+) must be installed
-# separately; see README.md "Prerequisites" section.
+# One-step build for the Dart binding's libitb3.so dependency.
+# Prerequisites (Go, Dart 3.0+) must be installed separately; see
+# README.md "Prerequisites" section.
 #
 # Every artefact this binding owns is removed before the build, so
-# nothing in the tree predates the invocation. eitb/eitb runs its Dart
-# entry point directly, so it has no compiled output of its own: the
-# guarantee for it is that .dart_tool/'s kernel cache is gone and the
-# analyzer pass below covers eitb/ along with the rest of the package.
+# nothing in the tree predates the invocation. eitb/eitb and
+# loop/main.dart run their Dart entry points directly, so neither has
+# compiled output of its own: the guarantee for them is that
+# .dart_tool/'s kernel cache is gone and the analyzer pass below covers
+# eitb/ and loop/ along with the rest of the package.
 #
 # Usage:
 #   ./build.sh             # default build (full asm stack)
@@ -126,7 +127,7 @@ cd "$REPO_ROOT/bindings/dart"
 echo "==> resolving Dart package dependencies"
 dart pub get
 
-echo "==> analyzing the itb package, the tests, the bench and eitb"
+echo "==> analyzing the itb package, the tests, the bench, eitb and loop"
 dart analyze
 
 echo "==> Dart binding loads libitb3.so at runtime via dart:ffi; no further build step."

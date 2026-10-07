@@ -64,6 +64,10 @@ abstract final class Itb {
   /// The libitb3 library version string.
   static String version() => rt.libVersion();
 
+  /// The fill cipher the auto DRBG tier selected on this host
+  /// (`aes-256-ctr` or `chacha20`; see [rt.drbgAutoTier]).
+  static String drbgAutoTier() => rt.drbgAutoTier();
+
   /// Sets the Go runtime's soft heap limit in bytes; returns the
   /// previous limit. A negative value queries without changing.
   static int setMemoryLimit(int bytes) => rt.setMemoryLimit(bytes);
@@ -71,4 +75,23 @@ abstract final class Itb {
   /// Sets the Go GC trigger percentage; returns the previous value.
   /// A negative value queries without changing.
   static int setGcPercent(int pct) => rt.setGcPercent(pct);
+
+  /// Sets the Go runtime's GOMAXPROCS; returns the previous value. A
+  /// value of zero or below queries without changing.
+  static int setGomaxprocs(int n) => rt.setGomaxprocs(n);
+
+  /// Writes a Go runtime heap profile (pprof) to the given path (see
+  /// [rt.writeHeapProfile]).
+  static void writeHeapProfile(String path) => rt.writeHeapProfile(path);
+
+  /// The number of `int64` slots [poolStats] reports.
+  static int poolStatsLen() => rt.poolStatsLen();
+
+  /// The library's pool hit / miss counters (see [rt.poolStats]).
+  static Int64List poolStats() => rt.poolStats();
+
+  /// The names of every hash primitive the shipped registry carries,
+  /// in registry order, read from the library via
+  /// `ITB_Triple_HashNames`.
+  static List<String> hashNames() => p.hashNames();
 }

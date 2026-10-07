@@ -1,0 +1,11 @@
+# The utility runs its Dart entry point directly and has no compiled
+# artefact of its own; the kernel cache lives in the binding's
+# .dart_tool/, which the binding's ignore file already covers. What
+# this file keeps out of the index is anything a toolchain run from
+# inside this directory would drop beside the sources, so the rule
+# survives if the tree is ever consumed outside the repository root.
+loop
+*.dill
+*.snapshot
+*.aot
+*.exe

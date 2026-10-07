@@ -19,12 +19,12 @@ import 'dart:convert';
 /// or exactly eight slot names in the order `[noise, lock, data1,
 /// data2, data3, start1, start2, start3]`.
 ///
-/// [nonceBits] and [barrierFill] are inspection-only. They are not
-/// part of the profile recipe: `inspect` reads them from the blob's
-/// runtime globals snapshot, while `lookup` leaves both null because
+/// [nonceBits], [barrierFill] and [containerMode] are inspection-only.
+/// They are not part of the profile recipe: `inspect` reads them from
+/// the blob's inner snapshot, while `lookup` leaves them null because
 /// the registry entry never carries them. libitb3 rejects a `register`
-/// payload that carries either key, so clear both before registering
-/// an inspected record.
+/// payload that carries any of the keys, so clear them before
+/// registering an inspected record.
 class Profile {
   Profile({
     this.name = '',
@@ -33,6 +33,7 @@ class Profile {
     this.hash = '',
     this.hashes = const [],
     this.keyBits = 0,
+    this.drbg = '',
     this.mac = '',
     this.tagStub = 0,
     this.chunk = 0,
@@ -43,6 +44,7 @@ class Profile {
     this.segment = 0,
     this.nonceBits,
     this.barrierFill,
+    this.containerMode,
   });
 
   /// Registry handle (`name`); empty on an anonymous record.
@@ -73,6 +75,14 @@ class Profile {
   /// DRBG barrier fill margin (`barrier_fill`), read from the blob's
   /// runtime globals. Same inspection-only lifecycle as [nonceBits].
   int? barrierFill;
+
+  /// Container floor sizing mode (`container_mode`), read from the
+  /// blob's inner mode field: 1 per-region, 2 per-container. Same
+  /// inspection-only lifecycle as [nonceBits].
+  int? containerMode;
+
+  /// DRBG fill primitive name (`drbg`); empty when absent.
+  String drbg;
 
   /// MAC name (`mac`); empty on a No MAC profile.
   String mac;
@@ -108,6 +118,8 @@ class Profile {
         'keybits': keyBits,
         if (nonceBits != null) 'nonce_bits': nonceBits!,
         if (barrierFill != null) 'barrier_fill': barrierFill!,
+        if (containerMode != null) 'container_mode': containerMode!,
+        if (drbg.isNotEmpty) 'drbg': drbg,
         if (mac.isNotEmpty) 'mac': mac,
         if (tagStub != 0) 'tagstub': tagStub,
         if (chunk != 0) 'chunk': chunk,
@@ -136,6 +148,8 @@ class Profile {
         keyBits: (m['keybits'] as int?) ?? 0,
         nonceBits: m['nonce_bits'] as int?,
         barrierFill: m['barrier_fill'] as int?,
+        containerMode: m['container_mode'] as int?,
+        drbg: (m['drbg'] as String?) ?? '',
         mac: (m['mac'] as String?) ?? '',
         tagStub: (m['tagstub'] as int?) ?? 0,
         chunk: (m['chunk'] as int?) ?? 0,

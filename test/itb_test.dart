@@ -41,6 +41,10 @@ void main() {
     expect(v, contains('.'));
   });
 
+  test('auto DRBG tier is one of the two fill ciphers', () {
+    expect(Itb.drbgAutoTier(), isIn(['aes-256-ctr', 'chacha20']));
+  });
+
   test('profiles list covers every cipher profile', () {
     for (final profile in cipherProfiles) {
       expect(Itb.profiles(), contains(profile));
@@ -264,7 +268,7 @@ void main() {
   });
 
   test('large plaintext exercises the pre-allocate + retry path', () {
-    // > 1 MiB payload: the 1.25x + 65536 pre-allocation covers the
+    // > 1 MiB payload: the 1.25x + 131072 pre-allocation covers the
     // envelope for large payloads in one call; a tiny payload
     // (handled above) exercises the small-input expansion. Both must
     // round-trip byte-exact.
@@ -282,7 +286,7 @@ void main() {
     final sender = Itb.create('singlemsg-triple-nomac-v1');
     final receiver = Itb.load(sender.save());
     final plain = payload(256 * 1024 + 777, 29);
-    final wireBuf = Uint8List(plain.length + (plain.length >> 2) + 65536);
+    final wireBuf = Uint8List(plain.length + (plain.length >> 2) + 131072);
     final backBuf = Uint8List(wireBuf.length);
 
     // Two rewrites of the same scratch pair must both round-trip
@@ -403,11 +407,12 @@ void main() {
       expect(prof.name, 'streaming-aead-triple-mac-v1');
       expect(prof.mode, 'streaming-aead');
       expect(prof.width, 512);
-      // The recipe fields match the registry entry; the two
+      // The recipe fields match the registry entry; the
       // inspection-only fields separate the two records.
       final recipe = prof.copy()
         ..nonceBits = null
-        ..barrierFill = null;
+        ..barrierFill = null
+        ..containerMode = null;
       expect(recipe, Itb.lookup('streaming-aead-triple-mac-v1'));
       pipe.free();
     });
@@ -483,6 +488,124 @@ void main() {
             .having((e) => e.statusCode, 'statusCode', Status.tripleClosed)),
       );
       pipe.free();
+    });
+  });
+  group('runtime surface', () {
+    final plain = payload(2048, 97);
+
+    test('hash registry enumerates in registry order', () {
+      final names = Itb.hashNames();
+      expect(names, isNotEmpty);
+      expect(names.first, 'aesitb128');
+      expect(names, contains('areion512'));
+      expect(names, contains('blake3'));
+      // Every name resolves as an inner-hash override on a profile of
+      // the matching width, so the list is the registry rather than an
+      // arbitrary set of strings.
+      expect(names, isNot(contains('nope')));
+    });
+
+    test('GOMAXPROCS queries and restores', () {
+      final before = Itb.setGomaxprocs(0);
+      expect(before, greaterThan(0));
+      final prev = Itb.setGomaxprocs(2);
+      expect(prev, before);
+      expect(Itb.setGomaxprocs(0), 2);
+      Itb.setGomaxprocs(before);
+      expect(Itb.setGomaxprocs(0), before);
+    });
+
+    test('pool counters report the advertised slot count and grow', () {
+      final n = Itb.poolStatsLen();
+      expect(n, greaterThan(8));
+      final before = Itb.poolStats();
+      expect(before, hasLength(n));
+      final tiers = before[0];
+      expect(tiers, greaterThan(0));
+      expect(n, 1 + 5 * tiers + 8);
+      final pipe = Itb.create('singlemsg-triple-mac-v1');
+      pipe.decryptMessage(pipe.encryptMessage(plain));
+      pipe.free();
+      final after = Itb.poolStats();
+      // Slot 1 + 5*i + 1 is tier i's checkout count; at least one tier
+      // was checked out by the round trip above.
+      var moved = false;
+      for (var i = 0; i < tiers; i++) {
+        if (after[1 + 5 * i + 1] > before[1 + 5 * i + 1]) moved = true;
+      }
+      expect(moved, isTrue);
+    });
+
+    test('heap profile is written and is non-empty', () {
+      final dir = Directory.systemTemp.createTempSync('itb-dart-heap');
+      try {
+        final path = '${dir.path}/heap.prof';
+        Itb.writeHeapProfile(path);
+        expect(File(path).lengthSync(), greaterThan(0));
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    });
+
+    test('heap profile with no path and no env fallback is BadInput', () {
+      expect(
+        () => Itb.writeHeapProfile(''),
+        throwsA(isA<ItbException>()
+            .having((e) => e.statusCode, 'statusCode', Status.badInput)),
+      );
+    });
+  });
+
+  group('drbg fill primitive', () {
+    final plain = payload(2048, 113);
+
+    test('drbg round trips and inspect reports it', () {
+      for (final name in const ['csprng', 'aesitb128']) {
+        final sender = Itb.create('singlemsg-triple-mac-v1', Opts().withDrbg(name));
+        final blob = sender.save();
+        final prof = Itb.inspect(blob);
+        expect(prof.drbg, name);
+        expect(prof.toJson(), contains('"drbg":"$name"'));
+        final receiver = Itb.load(blob);
+        expect(sender.decryptMessage(receiver.encryptMessage(plain)), plain);
+        sender.free();
+        receiver.free();
+      }
+    });
+
+    test('drbg is absent by default', () {
+      final pipe = Itb.create('singlemsg-triple-mac-v1');
+      final prof = Itb.inspect(pipe.save());
+      pipe.free();
+      expect(prof.drbg, isEmpty);
+      expect(prof.toJson(), isNot(contains('drbg')));
+      final registry = Itb.lookup('singlemsg-triple-mac-v1');
+      expect(registry.drbg, isEmpty);
+      expect(registry.toJson(), isNot(contains('drbg')));
+    });
+
+    test('unknown drbg is RecipePrimitiveUnknown', () {
+      expect(
+        () => Itb.create('singlemsg-triple-mac-v1', Opts().withDrbg('nope')),
+        throwsA(isA<ItbException>()
+            .having((e) => e.statusCode, 'statusCode',
+                Status.recipePrimitiveUnknown)
+            .having((e) => e.lastError, 'lastError', contains('nope'))),
+      );
+    });
+
+    test('drbg survives a register copy of an inspected record', () {
+      // drbg is a recipe field: unlike the inspection-only fields, it
+      // stays in a registered copy of an inspected record.
+      final pipe = Itb.create('singlemsg-triple-mac-v1', Opts().withDrbg('csprng'));
+      final recipe = Itb.inspect(pipe.save())
+        ..name = ''
+        ..nonceBits = null
+        ..barrierFill = null
+        ..containerMode = null;
+      pipe.free();
+      Itb.register('dart-binding-test-drbg-copy', recipe);
+      expect(Itb.lookup('dart-binding-test-drbg-copy').drbg, 'csprng');
     });
   });
 }

@@ -111,13 +111,13 @@ void benchMessage() {
     final plain = payload(size, size);
     // Reusable wire scratch shared by every iteration of the size
     // case, pre-sized to the documented expansion bound
-    // (payload * 5/4 + 65536): encryptMessageInto rewrites it in
+    // (payload * 5/4 + 131072): encryptMessageInto rewrites it in
     // place — no per-iteration Dart-heap allocation.
-    final wire = Uint8List(size + (size >> 2) + 65536);
+    final wire = Uint8List(size + (size >> 2) + 131072);
     benchCase('message', size, () => pipe.encryptMessageInto(plain, wire));
     // Pre-encrypt one wire outside the decrypt timing loop.
     final decWire = pipe.encryptMessage(plain);
-    final decOut = Uint8List(size + 65536);
+    final decOut = Uint8List(size + 131072);
     benchCase('message-dec', size,
         () => pipe.decryptMessageInto(decWire, decOut));
   }
@@ -132,7 +132,7 @@ void benchStream() {
   // side of a real pump (socket / file sink) reads into a stable
   // buffer, so the bench does the same via read(out) instead of
   // materializing a fresh chunk per drain call.
-  final out = Uint8List(chunk + 65536);
+  final out = Uint8List(chunk + 131072);
   for (final size in sizes) {
     final plain = payload(size, size + 1);
     void run() {
@@ -216,9 +216,9 @@ void benchStreamOneShot() {
 }
 
 void main() {
-  // Bench-scale allocation churn leaks Go scratch heap unboundedly
-  // without a soft memory cap + aggressive GC; the return values
-  // report the previous settings, not an error.
+  // Bench-scale allocation churn grows the Go scratch heap
+  // unboundedly without a soft memory cap + aggressive GC; the
+  // return values report the previous settings, not an error.
   Itb.setMemoryLimit(4 << 30);
   Itb.setGcPercent(100);
 

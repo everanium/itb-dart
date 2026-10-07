@@ -33,36 +33,6 @@ abstract final class Status {
   static const int internal = 99;
 }
 
-const Map<int, String> _labels = {
-  Status.ok: 'ok',
-  Status.badHash: 'unknown hash name',
-  Status.badKeyBits: 'invalid key bits',
-  Status.badHandle: 'invalid handle',
-  Status.badInput: 'invalid input',
-  Status.bufferTooSmall: 'output buffer too small',
-  Status.encryptFailed: 'encrypt failed',
-  Status.decryptFailed: 'decrypt failed',
-  Status.seedWidthMix: 'seed width mismatch',
-  Status.badMac: 'unknown MAC name or invalid MAC handle',
-  Status.macFailure: 'MAC verification failed',
-  Status.blobMalformedRecipe: 'blob profile record invalid',
-  Status.recipePrimitiveUnknown:
-      'blob profile record names a primitive absent from the local registries',
-  Status.unknownProfile: 'unknown profile name',
-  Status.blobModeMismatch: 'blob mode mismatch',
-  Status.blobMalformed: 'malformed state blob',
-  Status.blobVersionTooNew: 'blob version too new',
-  Status.blobTooManyOpts: 'too many blob export opts',
-  Status.streamTruncated: 'stream truncated before terminator',
-  Status.streamAfterFinal: 'stream chunk after terminator',
-  Status.tripleClosed: 'Triple Pipeline is closed',
-  Status.profileExists: 'profile name already registered',
-  Status.internal: 'internal error',
-};
-
-/// Short human-readable label for a status code.
-String statusLabel(int code) => _labels[code] ?? 'unknown status $code';
-
 /// Thrown whenever libitb3 returns a non-OK status.
 ///
 /// [statusCode] carries the numeric code; [lastError] carries the
@@ -81,10 +51,7 @@ class ItbException implements Exception {
   final String lastError;
 
   @override
-  String toString() {
-    final base = 'itb: status=$statusCode (${statusLabel(statusCode)})';
-    return lastError.isEmpty ? base : '$base: $lastError';
-  }
+  String toString() => 'itb: status=$statusCode: $lastError';
 }
 
 /// Maps a raw FFI return code onto void / thrown [ItbException].

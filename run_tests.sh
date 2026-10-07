@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 #
-# run_tests.sh -- one-step test runner for the Dart binding.
-# Builds libitb3.so via build.sh, points ITB_LIBITB3_PATH at the
-# freshly-built shared library, then invokes `dart test`. Forwards
-# any positional arguments through to dart test (e.g. a --name
-# filter).
+# One-step test runner for the Dart binding. Builds libitb3.so via
+# build.sh, points ITB_LIBITB3_PATH at the freshly-built shared
+# library, then invokes `dart test`. Forwards any positional
+# arguments through to dart test (e.g. a --name filter).
 #
 # Usage:
 #   ./run_tests.sh                          # full suite

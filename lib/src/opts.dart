@@ -55,6 +55,8 @@ class Opts {
 
   Opts withOuterCipher(String name) => withRaw('outerCipher', name);
 
+  Opts withDrbg(String name) => withRaw('drbg', name);
+
   /// Comma-joins the palette names (`parallaxPalette`).
   Opts withParallaxPalette(List<String> names) =>
       withRaw('parallaxPalette', names.join(','));

@@ -204,6 +204,20 @@ typedef _StreamReadC = Int32 Function(UintPtr stream, Pointer<Uint8> out,
 typedef StreamReadDart = int Function(int stream, Pointer<Uint8> out,
     int outCap, Pointer<Size> outLen, Pointer<Int32> finished);
 
+typedef _SetGOMAXPROCSC = Int32 Function(Int32 n);
+typedef SetGOMAXPROCSDart = int Function(int n);
+
+typedef _WriteHeapProfileC = Int32 Function(Pointer<Utf8> path);
+typedef WriteHeapProfileDart = int Function(Pointer<Utf8> path);
+
+typedef _PoolStatsLenC = Int32 Function();
+typedef PoolStatsLenDart = int Function();
+
+typedef _PoolStatsC = Int32 Function(
+    Pointer<Int64> out, Size capElems, Pointer<Size> outLen);
+typedef PoolStatsDart = int Function(
+    Pointer<Int64> out, int capElems, Pointer<Size> outLen);
+
 // ---------------------------------------------------------------------------
 // Bridge singleton
 // ---------------------------------------------------------------------------
@@ -213,6 +227,8 @@ typedef StreamReadDart = int Function(int stream, Pointer<Uint8> out,
 class FfiBridge {
   FfiBridge._(DynamicLibrary lib)
       : version = lib.lookupFunction<_VersionC, VersionDart>('ITB_Version'),
+        drbgAutoTier =
+            lib.lookupFunction<_VersionC, VersionDart>('ITB_DRBGAutoTier'),
         lastError = lib.lookupFunction<_VersionC, VersionDart>('ITB_LastError'),
         setMemoryLimit =
             lib.lookupFunction<_SetMemoryLimitC, SetMemoryLimitDart>(
@@ -265,11 +281,24 @@ class FfiBridge {
         streamRead = lib.lookupFunction<_StreamReadC, StreamReadDart>(
             'ITB_Triple_StreamRead'),
         streamFree = lib.lookupFunction<_HandleOnlyC, HandleOnlyDart>(
-            'ITB_Triple_StreamFree');
+            'ITB_Triple_StreamFree'),
+        tripleHashNames =
+            lib.lookupFunction<_TripleProfilesC, TripleProfilesDart>(
+                'ITB_Triple_HashNames'),
+        setGOMAXPROCS = lib.lookupFunction<_SetGOMAXPROCSC, SetGOMAXPROCSDart>(
+            'ITB_SetGOMAXPROCS'),
+        writeHeapProfile =
+            lib.lookupFunction<_WriteHeapProfileC, WriteHeapProfileDart>(
+                'ITB_WriteHeapProfile'),
+        poolStatsLen = lib.lookupFunction<_PoolStatsLenC, PoolStatsLenDart>(
+            'ITB_PoolStatsLen'),
+        poolStats =
+            lib.lookupFunction<_PoolStatsC, PoolStatsDart>('ITB_PoolStats');
 
   static final FfiBridge instance = FfiBridge._(_openLibrary());
 
   final VersionDart version;
+  final VersionDart drbgAutoTier;
   final VersionDart lastError;
   final SetMemoryLimitDart setMemoryLimit;
   final SetGCPercentDart setGCPercent;
@@ -296,6 +325,11 @@ class FfiBridge {
   final HandleOnlyDart streamEnd;
   final StreamReadDart streamRead;
   final HandleOnlyDart streamFree;
+  final TripleProfilesDart tripleHashNames;
+  final SetGOMAXPROCSDart setGOMAXPROCS;
+  final WriteHeapProfileDart writeHeapProfile;
+  final PoolStatsLenDart poolStatsLen;
+  final PoolStatsDart poolStats;
 }
 
 // ---------------------------------------------------------------------------
