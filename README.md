@@ -92,6 +92,7 @@ resolved shape, so `load` takes no opts:
 
 ```dart
 final opts = Opts()
+    ..withMode(2)
     ..withChunkSize(65536)
     ..withWrapper(false);
 final sender = Itb.create('singlemsg-triple-mac-v1', opts);

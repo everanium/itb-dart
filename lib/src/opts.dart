@@ -16,6 +16,9 @@ import 'dart:typed_data';
 class Opts {
   final List<(String, String)> _pairs = [];
 
+  /// Container floor sizing mode (1 per-region, 2 per-container).
+  Opts withMode(int n) => withRaw('mode', '$n');
+
   /// Hex-encodes the parallax master override (`pm`).
   Opts withPermMaster(Uint8List master) => withRaw('pm', _hex(master));
 

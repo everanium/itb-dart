@@ -422,27 +422,33 @@ void main() {
       // barrier fill margin, and inspect surfaces both.
       final pipe = Itb.create('streaming-aead-triple-mac-v1');
       final prof = Itb.inspect(pipe.save());
+      expect(prof.containerMode, 1);
       expect(prof.nonceBits, 512);
       expect(prof.barrierFill, 1);
       pipe.free();
 
       // Per-Pipeline overrides travel through the blob into inspect.
       final tuned = Itb.create('streaming-aead-triple-mac-v1',
-          Opts().withNonceBits(256).withBarrierFill(4));
+          Opts().withMode(2).withNonceBits(256).withBarrierFill(4));
       final tunedProf = Itb.inspect(tuned.save());
+      expect(tunedProf.containerMode, 2);
       expect(tunedProf.nonceBits, 256);
       expect(tunedProf.barrierFill, 4);
+      expect(tunedProf.toJson(), contains('"container_mode":2'));
       expect(tunedProf.toJson(), contains('"nonce_bits":256'));
       expect(tunedProf.toJson(), contains('"barrier_fill":4'));
       // copy() round-trips the two fields rather than dropping them.
+      expect(tunedProf.copy().containerMode, 2);
       expect(tunedProf.copy().nonceBits, 256);
       tuned.free();
 
       // The registry entry is the recipe alone — neither field is
       // part of it, so both read as absent rather than as zero.
       final registry = Itb.lookup('streaming-aead-triple-mac-v1');
+      expect(registry.containerMode, isNull);
       expect(registry.nonceBits, isNull);
       expect(registry.barrierFill, isNull);
+      expect(registry.toJson(), isNot(contains('container_mode')));
       expect(registry.toJson(), isNot(contains('nonce_bits')));
       expect(registry.toJson(), isNot(contains('barrier_fill')));
     });

@@ -37,7 +37,6 @@
 // then the partial summary prints.
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -525,33 +524,6 @@ void _logPipelineInitialised(String profile, Uint8List blob) {
       '${r.drbg.isNotEmpty ? ' drbg=${r.drbg}' : ''}');
 }
 
-/// Sets the inner blob's "mode" field of a wrap-layer session blob to
-/// targetMode (1 = per-region, 2 = per-container) and returns the
-/// re-encoded blob, or the failure detail. The wrap layer's profile
-/// record carries its own "mode" (a string), so only the inner blob
-/// ("ib") is touched; every other value survives the round trip
-/// unchanged (integers stay integers, strings stay byte-identical) and
-/// no key is added.
-(Uint8List?, String) _editInnerBlobMode(Uint8List blob, int targetMode) {
-  Object? wrap;
-  try {
-    wrap = jsonDecode(utf8.decode(blob));
-  } on FormatException catch (e) {
-    return (null, 'unmarshal wrap blob: ${e.message}');
-  }
-  if (wrap is! Map<String, dynamic>) {
-    return (null, 'wrap blob is not a JSON object');
-  }
-  final inner = wrap['ib'];
-  if (inner is! Map<String, dynamic>) {
-    return (null, 'inner blob not found');
-  }
-  if (!inner.containsKey('mode')) {
-    return (null, 'inner blob mode field not found');
-  }
-  inner['mode'] = targetMode;
-  return (Uint8List.fromList(utf8.encode(jsonEncode(wrap))), '');
-}
 
 /// Constructs one Pipeline against profile with every flag-carried
 /// override in the opts string (zero values included — the shared
@@ -561,6 +533,7 @@ void _logPipelineInitialised(String profile, Uint8List blob) {
 /// reopens use the retained blob; save is never called again.
 (Pipeline, Uint8List)? _buildPipeline(Config cfg, String profile) {
   final opts = Opts()
+      .withMode(cfg.blobMode)
       .withInnerHash(cfg.hash)
       .withMacName(cfg.mac)
       .withParallax(cfg.parallax)
@@ -593,25 +566,6 @@ void _logPipelineInitialised(String profile, Uint8List blob) {
     errLine('Save($profile): ${statusDetail(e)}');
     pipe.free();
     return null;
-  }
-  if (cfg.blobMode == 2) {
-    // The sizing mode is not an Opts knob: the Init blob is edited and
-    // the pipeline reopened from it, so the retained blob (the one
-    // blob-cycle reopens from) carries the edited mode.
-    final (edited, detail) = _editInnerBlobMode(blob, 2);
-    if (edited == null) {
-      errLine('rewrite blob mode: $detail');
-      pipe.free();
-      return null;
-    }
-    blob = edited;
-    pipe.free();
-    try {
-      pipe = Itb.load(blob);
-    } catch (e) {
-      errLine('reload Mode 2 blob: ${statusDetail(e)}');
-      return null;
-    }
   }
   _logPipelineInitialised(profile, blob);
   return (pipe, blob);
