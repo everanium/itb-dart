@@ -14,9 +14,9 @@ the `.so` / `.dylib` / `.dll` is resolved and dispatched at first
 use. Every hash-name / MAC-name / cipher-name / profile-name is an
 opaque string passed through to Go for validation; the binding
 carries no ITB construction logic. The public surface is one
-`Pipeline` class (create / load / save / rekey / close, Single
+`Pipeline` class (create / createKeys / load / save / rekey / close, Single
 Message encrypt / decrypt, one-shot and incremental stream
-sessions with chunk pumps), the `Itb` facade (create / load / loadF /
+sessions with chunk pumps), the `Itb` facade (create / createKeys / load / loadF /
 inspect / register / lookup / profiles / version / drbgAutoTier /
 runtime knobs), an `Opts` query-string builder, the `Profile` record, and
 `ItbException`.
@@ -98,6 +98,8 @@ final opts = Opts()
 final sender = Itb.create('singlemsg-triple-mac-v1', opts);
 final receiver = Itb.load(sender.save());
 ```
+
+`Itb.createKeys(profile, masters, [opts])` constructs a session from caller-supplied master keys (`8` keys when neither Parallax nor the Wrapper is active, `9` when one is, `10` when both are, each 16–64 bytes and pairwise distinct) instead of drawing from the library CSPRNG.
 
 `Pipeline.rekey` rotates the parallax + wrapper masters mid-session
 (the eight ITB seeds and MAC key are fixed for the session lifetime

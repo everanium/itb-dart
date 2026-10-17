@@ -97,6 +97,29 @@ typedef TripleInitDart = int Function(
     Pointer<Size> blobLen,
     Pointer<UintPtr> outHandle);
 
+typedef _TripleInitKeysC = Int32 Function(
+    Pointer<Utf8> profile,
+    Pointer<Utf8> opts,
+    Pointer<Uint8> mastersFlat,
+    Size mastersFlatLen,
+    Pointer<Size> masterLens,
+    Size mastersCount,
+    Pointer<Uint8> blobOut,
+    Size blobCap,
+    Pointer<Size> blobLen,
+    Pointer<UintPtr> outHandle);
+typedef TripleInitKeysDart = int Function(
+    Pointer<Utf8> profile,
+    Pointer<Utf8> opts,
+    Pointer<Uint8> mastersFlat,
+    int mastersFlatLen,
+    Pointer<Size> masterLens,
+    int mastersCount,
+    Pointer<Uint8> blobOut,
+    int blobCap,
+    Pointer<Size> blobLen,
+    Pointer<UintPtr> outHandle);
+
 typedef _TripleLoadC = Int32 Function(
     Pointer<Uint8> blob,
     Size blobLen,
@@ -237,6 +260,9 @@ class FfiBridge {
             'ITB_SetGCPercent'),
         tripleInit =
             lib.lookupFunction<_TripleInitC, TripleInitDart>('ITB_Triple_Init'),
+        tripleInitKeys =
+            lib.lookupFunction<_TripleInitKeysC, TripleInitKeysDart>(
+                'ITB_Triple_InitKeys'),
         tripleLoad =
             lib.lookupFunction<_TripleLoadC, TripleLoadDart>('ITB_Triple_Load'),
         tripleLoadF = lib
@@ -303,6 +329,7 @@ class FfiBridge {
   final SetMemoryLimitDart setMemoryLimit;
   final SetGCPercentDart setGCPercent;
   final TripleInitDart tripleInit;
+  final TripleInitKeysDart tripleInitKeys;
   final TripleLoadDart tripleLoad;
   final TripleLoadFDart tripleLoadF;
   final TripleSaveDart tripleSave;

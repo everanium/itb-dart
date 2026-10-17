@@ -170,6 +170,38 @@ void main() {
     receiver.free();
   });
 
+  test('createKeys determinism and BadInput error propagation', () {
+    final opts = Opts()
+      ..withParallax(false)
+      ..withWrapper(false);
+    final masters = List.generate(
+      8,
+      (i) => Uint8List(32)..fillRange(0, 32, 0x11 * (i + 1)),
+    );
+    final p1 = Itb.createKeys('singlemsg-triple-mac-v1', masters, opts);
+    final p2 = Itb.createKeys('singlemsg-triple-mac-v1', masters, opts);
+    expect(p1.save(), p2.save());
+    final plain = payload(1024, 99);
+    expect(p2.decryptMessage(p1.encryptMessage(plain)), plain);
+    p1.free();
+    p2.free();
+
+    final dup = List<Uint8List>.from(masters)..[7] = masters[0];
+    expect(
+      () => Itb.createKeys('singlemsg-triple-mac-v1', dup, opts),
+      throwsA(isA<ItbException>()
+          .having((e) => e.statusCode, 'statusCode', Status.badInput)),
+    );
+
+    final short = List<Uint8List>.from(masters)
+      ..[0] = (Uint8List(8)..fillRange(0, 8, 0xAA));
+    expect(
+      () => Itb.createKeys('singlemsg-triple-mac-v1', short, opts),
+      throwsA(isA<ItbException>()
+          .having((e) => e.statusCode, 'statusCode', Status.badInput)),
+    );
+  });
+
   group('error mapping', () {
     test('unknown profile is UnknownProfile with a diagnostic', () {
       expect(

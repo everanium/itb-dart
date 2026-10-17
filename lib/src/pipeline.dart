@@ -108,6 +108,56 @@ class Pipeline {
     }
   }
 
+  /// Constructs a Pipeline against the named profile from caller-supplied
+  /// master keys (`ITB_Triple_InitKeys`).
+  factory Pipeline.createKeys(String profile, List<Uint8List> masters,
+      [Opts? opts]) {
+    final bridge = FfiBridge.instance;
+    final profileP = profile.toNativeUtf8(allocator: malloc);
+    final optsP = (opts ?? Opts()).build().toNativeUtf8(allocator: malloc);
+    final handleP = malloc<UintPtr>();
+    final count = masters.length;
+    var totalLen = 0;
+    for (final m in masters) {
+      totalLen += m.length;
+    }
+    final flatP = totalLen > 0 ? malloc<Uint8>(totalLen) : nullptr;
+    final lensP = count > 0 ? malloc<Size>(count) : nullptr;
+    try {
+      var off = 0;
+      for (var i = 0; i < count; i++) {
+        final m = masters[i];
+        lensP[i] = m.length;
+        if (m.isNotEmpty) {
+          flatP.asTypedList(totalLen).setRange(off, off + m.length, m);
+          off += m.length;
+        }
+      }
+      handleP.value = 0;
+      _retryOnce(
+          _blobCap,
+          (buf, cap, len) => bridge.tripleInitKeys(profileP, optsP, flatP,
+              totalLen, lensP, count, buf, cap, len, handleP));
+      return Pipeline._(handleP.value);
+    } finally {
+      if (flatP != nullptr) {
+        flatP.asTypedList(totalLen).fillRange(0, totalLen, 0);
+        malloc.free(flatP);
+      }
+      if (lensP != nullptr) {
+        malloc.free(lensP);
+      }
+      malloc.free(profileP);
+      malloc.free(optsP);
+      malloc.free(handleP);
+    }
+  }
+
+  /// Alias for [Pipeline.createKeys].
+  factory Pipeline.initKeys(String profile, List<Uint8List> masters,
+          [Opts? opts]) =
+      Pipeline.createKeys;
+
   /// Reconstructs a Pipeline from a blob produced by [save] or
   /// [rekey]. The blob's embedded profile record is the sole
   /// structural source. [permMaster] / [wrapMaster] are null to use

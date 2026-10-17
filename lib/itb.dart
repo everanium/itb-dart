@@ -38,6 +38,17 @@ abstract final class Itb {
   static Pipeline create(String profile, [Opts? opts]) =>
       Pipeline.create(profile, opts);
 
+  /// Constructs a [Pipeline] against the named profile from caller-supplied
+  /// master keys.
+  static Pipeline createKeys(String profile, List<Uint8List> masters,
+          [Opts? opts]) =>
+      Pipeline.createKeys(profile, masters, opts);
+
+  /// Alias for [createKeys].
+  static Pipeline initKeys(String profile, List<Uint8List> masters,
+          [Opts? opts]) =>
+      Pipeline.createKeys(profile, masters, opts);
+
   /// Reconstructs a [Pipeline] from a blob produced by
   /// [Pipeline.save] or [Pipeline.rekey].
   static Pipeline load(Uint8List blob,
