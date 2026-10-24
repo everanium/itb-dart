@@ -31,6 +31,21 @@ int _outCap(int payload) => payload + (payload >> 2) + 131072;
 /// with the exact size the FFI reported through the length
 /// out-param. Returns a right-sized copy so the caller does not pin
 /// the pre-allocation slack.
+void _wipeIn(Pointer<Uint8> ptr, int len) {
+  if (ptr != nullptr && len > 0) {
+    ptr.asTypedList(len).fillRange(0, len, 0);
+  }
+}
+
+void _wipeUtf8(Pointer<Utf8> ptr) {
+  if (ptr != nullptr) {
+    final len = ptr.length;
+    if (len > 0) {
+      ptr.cast<Uint8>().asTypedList(len).fillRange(0, len, 0);
+    }
+  }
+}
+
 Uint8List _retryOnce(
     int cap, int Function(Pointer<Uint8> out, int outCap, Pointer<Size>) call) {
   var buf = malloc<Uint8>(cap);
@@ -39,6 +54,7 @@ Uint8List _retryOnce(
     outLen.value = 0;
     var rc = call(buf, cap, outLen);
     if (rc == Status.bufferTooSmall && outLen.value > cap) {
+      _wipeIn(buf, cap);
       malloc.free(buf);
       cap = outLen.value;
       buf = malloc<Uint8>(cap);
@@ -48,6 +64,7 @@ Uint8List _retryOnce(
     check(rc);
     return Uint8List.fromList(buf.asTypedList(outLen.value));
   } finally {
+    _wipeIn(buf, cap);
     malloc.free(buf);
     malloc.free(outLen);
   }
@@ -96,13 +113,15 @@ class Pipeline {
     final handleP = malloc<UintPtr>();
     try {
       handleP.value = 0;
-      _retryOnce(
+      final blob = _retryOnce(
           _blobCap,
           (buf, cap, len) =>
               bridge.tripleInit(profileP, optsP, buf, cap, len, handleP));
+      blob.fillRange(0, blob.length, 0);
       return Pipeline._(handleP.value);
     } finally {
       malloc.free(profileP);
+      _wipeUtf8(optsP);
       malloc.free(optsP);
       malloc.free(handleP);
     }
@@ -134,10 +153,11 @@ class Pipeline {
         }
       }
       handleP.value = 0;
-      _retryOnce(
+      final blob = _retryOnce(
           _blobCap,
           (buf, cap, len) => bridge.tripleInitKeys(profileP, optsP, flatP,
               totalLen, lensP, count, buf, cap, len, handleP));
+      blob.fillRange(0, blob.length, 0);
       return Pipeline._(handleP.value);
     } finally {
       if (flatP != nullptr) {
@@ -148,6 +168,7 @@ class Pipeline {
         malloc.free(lensP);
       }
       malloc.free(profileP);
+      _wipeUtf8(optsP);
       malloc.free(optsP);
       malloc.free(handleP);
     }
@@ -184,7 +205,12 @@ class Pipeline {
       ));
       return Pipeline._(handleP.value);
     } finally {
+      _wipeIn(blobP, blob.length);
       freeIn(blobP);
+      if (overriding) {
+        _wipeIn(permP, permMaster!.length);
+        _wipeIn(wrapP, wrapMaster!.length);
+      }
       freeIn(permP);
       freeIn(wrapP);
       malloc.free(handleP);
@@ -215,6 +241,10 @@ class Pipeline {
       return Pipeline._(handleP.value);
     } finally {
       malloc.free(pathP);
+      if (overriding) {
+        _wipeIn(permP, permMaster!.length);
+        _wipeIn(wrapP, wrapMaster!.length);
+      }
       freeIn(permP);
       freeIn(wrapP);
       malloc.free(handleP);
@@ -274,6 +304,8 @@ class Pipeline {
           (buf, cap, len) => bridge.tripleRekey(_handle, permP,
               permMaster.length, wrapP, wrapMaster.length, buf, cap, len));
     } finally {
+      _wipeIn(permP, permMaster.length);
+      _wipeIn(wrapP, wrapMaster.length);
       freeIn(permP);
       freeIn(wrapP);
     }
