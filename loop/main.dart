@@ -98,6 +98,8 @@ const List<_Flag> _flags = [
   _Flag('goroutines', 'int', _Kind.int32,
       'concurrent workers (1..10); on runtimes without parallelism values above 1 are clamped to 1'),
   _Flag('hash', 'string', _Kind.string, 'inner ITB hash primitive name'),
+  _Flag('interlock', 'string', _Kind.string,
+      'Interlocked Barrier chunk width: 48 | 168; empty = profile default (48; 168 requires 512-bit hash)'),
   _Flag('iterations', 'int', _Kind.int64,
       'fixed per-worker iteration count; 0 = duration-based'),
   _Flag('json-output', '', _Kind.boolean,
@@ -140,6 +142,7 @@ Map<String, Object> _rawDefaults() => {
       'gomaxprocs': 0,
       'goroutines': 3,
       'hash': 'areion512',
+      'interlock': '',
       'iterations': 0,
       'json-output': false,
       'key-bits': 0,
@@ -416,6 +419,12 @@ int _narrowShape(int requested, int surface) {
   }
   // Validated by Init: the C ABI enumerates no DRBG names.
   cfg.drbg = str('drbg');
+  cfg.interlock = str('interlock');
+  if (!['', '48', '168'].contains(cfg.interlock)) {
+    errLine('--interlock must be 48 | 168 (or empty = profile default), '
+        'got "${cfg.interlock}"');
+    return (-1, cfg);
+  }
   final chunk = parseSize(str('chunk-size'));
   if (chunk == null) {
     errLine('--chunk-size: invalid size "${str('chunk-size')}"');
@@ -521,7 +530,8 @@ void _logPipelineInitialised(String profile, Uint8List blob) {
       'chunk-size=${r.chunk} mac=${r.mac.isEmpty ? '-' : r.mac} '
       'parallax=${onOff(r.parallax)} wrapper=${onOff(r.wrapper)}'
       '${r.containerMode == 2 ? ' container-mode=${r.containerMode}' : ''}'
-      '${r.drbg.isNotEmpty ? ' drbg=${r.drbg}' : ''}');
+      '${r.drbg.isNotEmpty ? ' drbg=${r.drbg}' : ''}'
+      '${r.interlock.isNotEmpty ? ' interlock=${r.interlock}' : ''}');
 }
 
 
@@ -542,6 +552,7 @@ void _logPipelineInitialised(String profile, Uint8List blob) {
       .withNonceBits(cfg.nonceBits)
       .withBarrierFill(cfg.barrierFill)
       .withDrbg(cfg.drbg)
+      .withInterlock(cfg.interlock)
       .withChunkSize(cfg.chunkSize);
   if (cfg.profile.isNotEmpty) {
     final filled =
@@ -618,7 +629,8 @@ Future<int> _run(List<String> argv) async {
       'seed=${u64Dec(cfg.seed)} '
       'json-output=${cfg.jsonOutput ? 'true' : 'false'}'
       '${cfg.blobMode != 1 ? ' blob-mode=${cfg.blobMode}' : ''}'
-      '${cfg.drbg.isNotEmpty ? ' drbg=${cfg.drbg}' : ''}');
+      '${cfg.drbg.isNotEmpty ? ' drbg=${cfg.drbg}' : ''}'
+      '${cfg.interlock.isNotEmpty ? ' interlock=${cfg.interlock}' : ''}');
   logLine('policy: '
       'microbatch-tiers='
       '${policyLabel(Platform.environment['ITB_MICROBATCH_TIERS'])} '

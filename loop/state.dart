@@ -112,6 +112,9 @@ class Config {
   /// DRBG fill primitive; "" = profile default (auto tier).
   String drbg = '';
 
+  /// Interlocked Barrier chunk width: "48" | "168"; "" = profile default.
+  String interlock = '';
+
   /// 0 = inherit from the environment.
   int gomaxprocs = 0;
 

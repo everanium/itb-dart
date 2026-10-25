@@ -646,4 +646,50 @@ void main() {
       expect(Itb.lookup('dart-binding-test-drbg-copy').drbg, 'csprng');
     });
   });
+
+  group('interlock chunk width', () {
+    final plain = payload(2048, 127);
+
+    test('interlock 168 round trips, inspect reports it, and bad input is rejected', () {
+      final sender = Itb.create(
+        'singlemsg-triple-mac-v1',
+        Opts().withInterlock('168'),
+      );
+      expect(sender.decryptMessage(sender.encryptMessage(plain)), plain);
+
+      final blob = sender.save();
+      final prof = Itb.inspect(blob);
+      expect(prof.interlock, '168');
+      expect(prof.toJson(), contains('"interlock":"168"'));
+
+      final receiver = Itb.load(blob);
+      expect(receiver.decryptMessage(sender.encryptMessage(plain)), plain);
+      sender.free();
+      receiver.free();
+
+      final defPipe = Itb.create('singlemsg-triple-mac-v1');
+      final defProf = Itb.inspect(defPipe.save());
+      defPipe.free();
+      expect(defProf.interlock, isEmpty);
+      expect(defProf.toJson(), isNot(contains('interlock')));
+
+      expect(
+        () => Itb.create(
+          'singlemsg-triple-mac-v1',
+          Opts().withInnerHash('blake3').withInterlock('168'),
+        ),
+        throwsA(isA<ItbException>()
+            .having((e) => e.statusCode, 'statusCode', Status.badInput)),
+      );
+
+      expect(
+        () => Itb.create(
+          'singlemsg-triple-mac-v1',
+          Opts().withInterlock('96'),
+        ),
+        throwsA(isA<ItbException>()
+            .having((e) => e.statusCode, 'statusCode', Status.badInput)),
+      );
+    });
+  });
 }

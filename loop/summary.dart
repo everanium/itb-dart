@@ -257,6 +257,7 @@ int finalSummary(SummaryInput s) {
     o.write(',"blob_mode":${cfg.blobMode}');
     o.write(',"drbg":${jsonEncode(cfg.drbg)}');
     o.write(',"drbg_auto_tier":${jsonEncode(Itb.drbgAutoTier())}');
+    o.write(',"interlock":${jsonEncode(cfg.interlock)}');
     o.write(',"chunk_size_bytes":${cfg.chunkSize}');
     o.write(',"barrier_fill":${cfg.barrierFill}');
     o.write(',"parallax":"${onOff(cfg.parallax)}"');

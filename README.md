@@ -87,12 +87,13 @@ void main() {
 
 The `Opts` builder overrides the profile default at `create` (chunk
 size, outer cipher, parallax on/off, wrapper on/off, MAC name,
-palette, `maxWorkers`); the blob the receiver loads carries the
+palette, `interlock` (`"48"` | `"168"`, `""` = default 48-bit; `"168"` requires a 512-bit hash), `maxWorkers`); the blob the receiver loads carries the
 resolved shape, so `load` takes no opts:
 
 ```dart
 final opts = Opts()
     ..withMode(2)
+    ..withInterlock('168')
     ..withChunkSize(65536)
     ..withWrapper(false);
 final sender = Itb.create('singlemsg-triple-mac-v1', opts);

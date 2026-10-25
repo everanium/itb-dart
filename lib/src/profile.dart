@@ -34,6 +34,7 @@ class Profile {
     this.hashes = const [],
     this.keyBits = 0,
     this.drbg = '',
+    this.interlock = '',
     this.mac = '',
     this.tagStub = 0,
     this.chunk = 0,
@@ -84,6 +85,10 @@ class Profile {
   /// DRBG fill primitive name (`drbg`); empty when absent.
   String drbg;
 
+  /// Interlocked Barrier chunk width (`interlock`, `"48"` or `"168"`);
+  /// empty when absent.
+  String interlock;
+
   /// MAC name (`mac`); empty on a No MAC profile.
   String mac;
 
@@ -120,6 +125,7 @@ class Profile {
         if (barrierFill != null) 'barrier_fill': barrierFill!,
         if (containerMode != null) 'container_mode': containerMode!,
         if (drbg.isNotEmpty) 'drbg': drbg,
+        if (interlock.isNotEmpty) 'interlock': interlock,
         if (mac.isNotEmpty) 'mac': mac,
         if (tagStub != 0) 'tagstub': tagStub,
         if (chunk != 0) 'chunk': chunk,
@@ -150,6 +156,7 @@ class Profile {
         barrierFill: m['barrier_fill'] as int?,
         containerMode: m['container_mode'] as int?,
         drbg: (m['drbg'] as String?) ?? '',
+        interlock: (m['interlock'] as String?) ?? '',
         mac: (m['mac'] as String?) ?? '',
         tagStub: (m['tagstub'] as int?) ?? 0,
         chunk: (m['chunk'] as int?) ?? 0,

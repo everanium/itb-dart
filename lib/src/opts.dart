@@ -19,6 +19,9 @@ class Opts {
   /// Container floor sizing mode (1 per-region, 2 per-container).
   Opts withMode(int n) => withRaw('mode', '$n');
 
+  /// Interlocked Barrier chunk width (`"48"` or `"168"`, `""` = default 48-bit).
+  Opts withInterlock(String width) => withRaw('interlock', width);
+
   /// Hex-encodes the parallax master override (`pm`).
   Opts withPermMaster(Uint8List master) => withRaw('pm', _hex(master));
 
