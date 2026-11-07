@@ -9,7 +9,7 @@ import 'errors.dart';
 import 'ffi_bridge.dart';
 
 /// Binding package version, reported by the eitb CLI.
-const String bindingVersion = '0.9.0';
+const String bindingVersion = '0.9.1';
 
 /// Returns the libitb3 library version string.
 String libVersion() {

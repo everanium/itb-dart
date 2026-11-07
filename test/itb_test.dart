@@ -474,6 +474,12 @@ void main() {
       expect(tunedProf.copy().nonceBits, 256);
       tuned.free();
 
+      final p3 = Itb.create('streaming-aead-triple-mac-v1', Opts().withMode(3));
+      final prof3 = Itb.inspect(p3.save());
+      expect(prof3.containerMode, 3);
+      expect(prof3.toJson(), contains('"container_mode":3'));
+      p3.free();
+
       // The registry entry is the recipe alone — neither field is
       // part of it, so both read as absent rather than as zero.
       final registry = Itb.lookup('streaming-aead-triple-mac-v1');

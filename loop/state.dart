@@ -100,7 +100,7 @@ class Config {
   int nonceBits = 0;
 
   /// Container floor sizing mode: 1 (per-region, default) | 2
-  /// (per-container).
+  /// (per-container) | 3 (gauss-posit).
   int blobMode = 1;
 
   /// 0 = profile default.

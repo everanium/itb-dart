@@ -84,7 +84,7 @@ const List<_Flag> _flags = [
   _Flag('blob-cycle-every', 'int', _Kind.int64,
       'reopen each pipeline from its session blob every N iterations per worker; 0 = never'),
   _Flag('blob-mode', 'int', _Kind.int32,
-      'container floor sizing mode: 1 (per-region, default) | 2 (per-container)'),
+      'container floor sizing mode: 1 (per-region, default) | 2 (per-container) | 3 (gauss-posit)'),
   _Flag('chunk-size', 'string', _Kind.string,
       'streaming chunk-size budget (e.g. 4MB); 0 = profile default; inert for pure message shape'),
   _Flag('drbg', 'string', _Kind.string,
@@ -406,8 +406,8 @@ int _narrowShape(int requested, int surface) {
     return (-1, cfg);
   }
   cfg.blobMode = num('blob-mode');
-  if (![1, 2].contains(cfg.blobMode)) {
-    errLine('--blob-mode must be 1 (per-region) | 2 (per-container), '
+  if (![1, 2, 3].contains(cfg.blobMode)) {
+    errLine('--blob-mode must be 1 (per-region) | 2 (per-container) | 3 (gauss-posit), '
         'got ${cfg.blobMode}');
     return (-1, cfg);
   }
@@ -529,7 +529,7 @@ void _logPipelineInitialised(String profile, Uint8List blob) {
       'nonce-bits=${r.nonceBits ?? 0} barrier-fill=${r.barrierFill ?? 0} '
       'chunk-size=${r.chunk} mac=${r.mac.isEmpty ? '-' : r.mac} '
       'parallax=${onOff(r.parallax)} wrapper=${onOff(r.wrapper)}'
-      '${r.containerMode == 2 ? ' container-mode=${r.containerMode}' : ''}'
+      '${(r.containerMode == 2 || r.containerMode == 3) ? ' container-mode=${r.containerMode}' : ''}'
       '${r.drbg.isNotEmpty ? ' drbg=${r.drbg}' : ''}'
       '${r.interlock.isNotEmpty ? ' interlock=${r.interlock}' : ''}');
 }
